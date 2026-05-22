@@ -1,0 +1,59 @@
+# docker-compose.yml
+#
+# Orquesta dos servicios para desarrollo local:
+#   db  → PostgreSQL 16 (motor de BD definido en tesis §1.6.5)
+#   web → Django + DRF corriendo con runserver
+#
+# Uso:
+#   docker compose up --build        → primera vez
+#   docker compose up                → arranques posteriores
+#   docker compose exec web bash     → shell dentro del contenedor
+#   docker compose down -v           → detener y borrar volúmenes
+
+services:
+
+  # ─── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-uclv_residencias}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      # Volumen persistente: los datos sobreviven a reinicios del contenedor
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      # Expone PG al host en puerto 5433 para poder conectar con DBeaver/pgAdmin
+      # sin colisionar con un PG local en 5432
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-uclv_residencias}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─── Django Backend ───────────────────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      # Bind mount: cambios en el código se reflejan sin rebuild
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Sobreescribe DB_HOST para apuntar al servicio 'db' de compose
+      DB_HOST: db
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

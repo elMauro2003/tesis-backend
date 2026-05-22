@@ -1,0 +1,65 @@
+# ─── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# ─── Virtual Environment ───────────────────────────────────────────────────────
+venv/
+env/
+ENV/
+.venv/
+
+# ─── Django ────────────────────────────────────────────────────────────────────
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+test_db.sqlite3
+db_dev.sqlite3
+staticfiles/
+mediafiles/
+
+# ─── Environment Variables ─────────────────────────────────────────────────────
+# NUNCA commitear el .env real — solo el .env.example
+.env
+.env.*
+!.env.example
+
+# ─── Testing / Coverage ────────────────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+*.cover
+
+# ─── IDEs ──────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── Docker ────────────────────────────────────────────────────────────────────
+# (docker-compose.yml sí se commitea)
+
+# ─── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+test_output.txt
+uclv-api-bruno-collection
+test_api_suite_old.py
+test_api_suite.py
+test_login.py
