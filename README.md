@@ -212,24 +212,25 @@ uclv_residencias/
 
 ## 🌱 Seed Database (Datos Iniciales)
 
-El proyecto incluye un **script de población** que carga datos reales en la BD como simulación completa del sistema.
+El proyecto incluye un **script de población** que carga datos de prueba completos para simular el sistema real.
 
 ### Datos que carga
 
-- ✅ 3 sedes (Central, Pedagógico, Fajardo)
+- ✅ 3 sedes
 - ✅ 8 edificios
 - ✅ 24 alas
-- ✅ 120 cuartos (capacidad 4 cada uno)
-- ✅ 2 facultades con carreras (ICI, Ingeniería Eléctrica)
-- ✅ 5 años académicos (1º a 5º año)
-- ✅ 15 grupos de estudiantes
-- ✅ 9 profesores con roles asignados (decano, PPA, PG, responsable de ala)
-- ✅ 60 estudiantes registrados y asignados a cuartos
-- ✅ 30 evaluaciones
-- ✅ 20 quejas en diversos estados
-- ✅ 10 cuartelerías
-- ✅ 5 informaciones publicadas
-- ✅ 15 asignaciones históricas
+- ✅ 120 cuartos
+- ✅ 2 facultades
+- ✅ 3 carreras
+- ✅ 15 años académicos
+- ✅ 45 grupos de estudiantes
+- ✅ 50+ profesores con roles completos
+- ✅ 150 estudiantes
+- ✅ 80+ evaluaciones
+- ✅ 50+ quejas
+- ✅ 60+ cuartelerías
+- ✅ 12 informaciones publicadas
+- ✅ 8 reportes
 
 **Año académico:** Septiembre 2025 — Julio 2026 (estándar cubano)
 
