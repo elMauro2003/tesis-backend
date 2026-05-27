@@ -114,6 +114,25 @@ class IsInstructorOrDirectivo(BasePermission):
         return _user_has_role(request.user, "instructor", "directivo", "admin")
 
 
+class IsStudentReader(BasePermission):
+    """
+    Lectura de estudiantes para roles académicos y de gestión.
+    Usado en listados y consultas de detalle.
+    """
+    message = "Se requiere rol de instructor, directivo, decano, PPA o PG."
+
+    def has_permission(self, request, view):
+        return _user_has_role(
+            request.user,
+            "instructor",
+            "directivo",
+            "decano",
+            "ppa",
+            "pg",
+            "admin",
+        )
+
+
 # ─── Permisos a Nivel de Objeto  ───
 
 class IsOwner(BasePermission):

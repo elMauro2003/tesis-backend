@@ -42,6 +42,8 @@ class ComplaintViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_permissions(self):
+        if self.action in ["mis_quejas", "mis_evaluaciones", "mis_cuartelerias"]:
+            return [IsAuthenticated(), IsEstudiante()]
         if self.action == "create":
             return [IsAuthenticated(), IsEstudiante()]
         if self.action in ["partial_update", "destroy"]:
@@ -147,6 +149,8 @@ class EvaluationViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_permissions(self):
+        if self.action == "mis_evaluaciones":
+            return [IsAuthenticated(), IsEstudiante()]
         if self.action in ["create", "partial_update", "destroy"]:
             return [IsAuthenticated(), IsInstructor()]
         return [IsAuthenticated()]
@@ -190,6 +194,8 @@ class CleaningScheduleViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_permissions(self):
+        if self.action == "mis_cuartelerias":
+            return [IsAuthenticated(), IsEstudiante()]
         if self.action in ["create", "destroy", "completar"]:
             return [IsAuthenticated(), IsInstructor()]
         return [IsAuthenticated()]

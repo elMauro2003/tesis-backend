@@ -34,7 +34,12 @@ class SiteViewSet(viewsets.ModelViewSet):
             return super().destroy(request, *args, **kwargs)
         except ProtectedError:
             return Response(
-                {"error": "No se puede eliminar esta sede porque tiene edificios asociados."},
+                {
+                    "error": {
+                        "code": "CONFLICT",
+                        "message": "No se puede eliminar esta sede porque tiene edificios asociados.",
+                    }
+                },
                 status=status.HTTP_409_CONFLICT
             )
 

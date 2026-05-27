@@ -4,7 +4,10 @@ from decouple import config, Csv
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = config("SECRET_KEY", default="dev-unsafe-key-not-for-production")
+SECRET_KEY = config(
+    "SECRET_KEY",
+    default="dev-only-secret-key-for-local-development-please-override-in-production-2026",
+)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv(), default="localhost,127.0.0.1")
 
 

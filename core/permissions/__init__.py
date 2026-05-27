@@ -86,6 +86,21 @@ class IsInstructorOrDirectivo(BasePermission):
         return _user_has_role(request.user, "instructor", "directivo", "admin")
 
 
+class IsStudentReader(BasePermission):
+    message = "Se requiere rol de instructor, directivo, decano, PPA o PG."
+
+    def has_permission(self, request, view):
+        return _user_has_role(
+            request.user,
+            "instructor",
+            "directivo",
+            "decano",
+            "ppa",
+            "pg",
+            "admin",
+        )
+
+
 class IsOwner(BasePermission):
     message = "Solo el propietario puede realizar esta acción."
 
@@ -140,6 +155,7 @@ __all__ = [
     "IsPG",
     "IsAdmin",
     "IsInstructorOrDirectivo",
+    "IsStudentReader",
     "IsOwner",
     "IsStudentOwner",
     "IsAssignedBy",

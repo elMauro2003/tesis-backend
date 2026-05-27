@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from core.permissions import IsInstructor, IsDirectivo, IsAdmin, IsDecano, IsPPA, IsPG
+from core.permissions import IsInstructor, IsDirectivo, IsAdmin, IsStudentReader, IsInstructorOrDirectivo
 
 from .models import Student, Professor, Dean, GroupAdvisor, YearLeadProfessor, WingSupervisor
 from .serializers import (
@@ -39,10 +39,9 @@ class StudentViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
-            # Lectura: instructor, directivo, decano, ppa, pg
-            return [IsAuthenticated(), IsInstructor()]
-        # Escritura: solo instructor y directivo
-        return [IsAuthenticated(), IsInstructor()]
+            return [IsAuthenticated(), IsStudentReader()]
+        # Escritura: instructor, directivo y admin
+        return [IsAuthenticated(), IsInstructorOrDirectivo()]
 
     def get_queryset(self):
         qs = (

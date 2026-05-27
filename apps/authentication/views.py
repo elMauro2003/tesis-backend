@@ -2,11 +2,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.shortcuts import get_object_or_404
 
-from rest_framework import status, generics
+from rest_framework import status, generics, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -20,6 +21,8 @@ from .serializers import (
     UserCreateSerializer,
     RoleSerializer,
     UserRoleAssignSerializer,
+    LogoutResponseSerializer,
+    UserPermissionsResponseSerializer,
 )
 
 User = get_user_model()
@@ -57,8 +60,9 @@ class RefreshView(TokenRefreshView):
 
 # ─── RF-61: Logout ─────────────────────────────────────────────────────────────
 
-class LogoutView(APIView):
+class LogoutView(GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = LogoutResponseSerializer
 
     @extend_schema(
         tags=["auth"],
@@ -71,10 +75,10 @@ class LogoutView(APIView):
         responses={200: OpenApiResponse(description="Logout exitoso")},
     )
     def post(self, request):
-        return Response(
-            {"message": "Logout exitoso. Descarta los tokens en el cliente."},
-            status=status.HTTP_200_OK,
+        serializer = self.get_serializer(
+            {"message": "Logout exitoso. Descarta los tokens en el cliente."}
         )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # ─── RF-62: Cambiar Contraseña ─────────────────────────────────────────────────
@@ -243,8 +247,9 @@ class UserRoleRemoveView(APIView):
 
 # ─── RF-66: Listar Permisos de Usuario ────────────────────────────────────────
 
-class UserPermissionsView(APIView):
+class UserPermissionsView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
+    serializer_class = UserPermissionsResponseSerializer
 
     @extend_schema(
         tags=["roles"],
@@ -255,8 +260,10 @@ class UserPermissionsView(APIView):
             User.objects.prefetch_related("groups", "user_permissions"),
             pk=pk,
         )
-        return Response({
-            "user":        UserSerializer(user).data,
-            "roles":       list(user.groups.values_list("name", flat=True)),
+        payload = {
+            "user": user,
+            "roles": list(user.groups.values_list("name", flat=True)),
             "permissions": list(user.get_all_permissions()),
-        })
+        }
+        serializer = self.get_serializer(instance=payload)
+        return Response(serializer.data)

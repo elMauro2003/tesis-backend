@@ -159,3 +159,13 @@ class UserRoleAssignSerializer(serializers.Serializer):
                 f"Ejecuta: python manage.py create_roles"
             )
         return value
+
+
+class LogoutResponseSerializer(serializers.Serializer):
+    message = serializers.CharField(read_only=True)
+
+
+class UserPermissionsResponseSerializer(serializers.Serializer):
+    user = UserSerializer(read_only=True)
+    roles = serializers.ListField(child=serializers.CharField(), read_only=True)
+    permissions = serializers.ListField(child=serializers.CharField(), read_only=True)

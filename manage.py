@@ -14,7 +14,7 @@ import sys
 
 
 def main():
-    # Por defecto usa settings de desarrollo; en producción exportar:
+    # Por defecto usa settings de desarrollo; en producción debe definirse:
     # export DJANGO_SETTINGS_MODULE=config.settings.prod
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.dev")
     try:
