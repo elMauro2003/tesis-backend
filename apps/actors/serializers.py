@@ -91,12 +91,14 @@ class StudentCreateSerializer(serializers.ModelSerializer):
     career = serializers.IntegerField(write_only=True, help_text="ID de la carrera")
     year   = serializers.IntegerField(write_only=True, help_text="Año académico (1-5)")
 
+    birth_date = serializers.DateField(required=False, allow_null=True)
+
     class Meta:
-        model  = Student
+        model = Student
         fields = [
             # PASO 1: Datos Personales
             "username", "first_name", "last_name", "password",
-            "ci", "gender",
+            "ci", "birth_date", "gender",
             "address", "province", "municipality", "phone", "emergency_phone",
             # PASO 2: Datos Académicos
             "career", "year", "academic_performance",
@@ -115,8 +117,8 @@ class StudentCreateSerializer(serializers.ModelSerializer):
             "is_cadet_minint": {"required": False},
             "is_cadet_far": {"required": False},
             "disciplinary_process": {"required": False, "allow_blank": True},
+            "birth_date": {"required": False, "allow_null": True},
         }
-
     def create(self, validated_data):
         from django.db import transaction
         from django.contrib.auth.models import Group as DjangoGroup
@@ -147,6 +149,15 @@ class StudentCreateSerializer(serializers.ModelSerializer):
         
         validated_data["group"] = group
 
+        # Generar birth_date si no viene
+        from datetime import date
+        import random
+        if not validated_data.get("birth_date"):
+            validated_data["birth_date"] = date(
+                random.randint(1999, 2006),
+                random.randint(1, 12),
+                random.randint(1, 28),
+            )
         with transaction.atomic():
             # Crear User con contraseña hasheada
             user = User.objects.create_user(**user_fields)
@@ -154,6 +165,10 @@ class StudentCreateSerializer(serializers.ModelSerializer):
             student_group = DjangoGroup.objects.filter(name="estudiante").first()
             if student_group:
                 user.groups.add(student_group)
+            # Generar student_id si no viene
+            if not validated_data.get("student_id"):
+                import random
+                validated_data["student_id"] = f"STD{user.id:05d}{random.randint(100,999)}"
             # Crear Student
             student = Student.objects.create(user=user, **validated_data)
 

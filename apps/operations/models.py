@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from datetime import date
 
 from apps.actors.models import Student
 from apps.infrastructure.models import Building, Room
@@ -27,7 +28,7 @@ class Complaint(models.Model):
         related_name="complaints", verbose_name="Estudiante",
     )
     date = models.DateField(
-        default=timezone.now, verbose_name="Fecha de la queja",
+        default=date.today, verbose_name="Fecha de la queja",
     )
     # Edificio opcional: permite asociar la queja a una infraestructura específica
     building = models.ForeignKey(

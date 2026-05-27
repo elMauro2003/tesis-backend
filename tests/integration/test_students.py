@@ -25,15 +25,19 @@ class TestStudentCRUD:
         url      = reverse("student-list")
         response = client_instructor.post(url, {
             "username":   "nuevo_est",
-            "email":      "nuevo@test.cu",
             "first_name": "Nuevo",
             "last_name":  "Estudiante",
             "password":   "EstPass456!",
             "ci":         "95050512345",
-            "student_id": "ICI-2024-099",
             "birth_date": "1995-05-05",
             "gender":     "F",
-            "group":      group.pk,
+            "address":    "Calle 1",
+            "province":   "Villa Clara",
+            "municipality": "Santa Clara",
+            "phone":      "+53 4222-1234",
+            "emergency_phone": "+53 4222-4321",
+            "career":     group.career_year.career.pk,
+            "year":       group.career_year.year,
         }, format="json")
         assert response.status_code == status.HTTP_201_CREATED
 

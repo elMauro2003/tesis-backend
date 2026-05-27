@@ -50,6 +50,7 @@ from apps.academic.models import Faculty, Career, CareerYear, Group as StudentGr
 from apps.actors.models import Student, Professor, Dean, YearLeadProfessor, GroupAdvisor, WingSupervisor
 from apps.infrastructure.models import Site, Building, Wing, Room
 from apps.operations.models import Assignment, Complaint, Evaluation, CleaningSchedule, Information, Report
+from apps.actors.serializers import StudentCreateSerializer
 
 
 class Command(BaseCommand):
@@ -225,16 +226,15 @@ class Command(BaseCommand):
                 )
                 years.append(year)
         
-        # Grupos de estudiantes (3 grupos por año = 45 grupos, pero solo usamos 15)
+        # Grupos de estudiantes (1 grupo por año = 15 grupos)
         groups = []
         for year in years:
-            for group_letter in ["A", "B", "C"]:
-                group_name = f"{year.career.code}-{year.year}°-{group_letter}"
-                group, _ = StudentGroup.objects.get_or_create(
-                    name=group_name,
-                    career_year=year
-                )
-                groups.append(group)
+            group_name = f"{year.career.code}-{year.year}°"
+            group, _ = StudentGroup.objects.get_or_create(
+                name=group_name,
+                career_year=year
+            )
+            groups.append(group)
         
         self.stdout.write(self.style.SUCCESS(
             f"✓ Académica: {len(faculties)} facultades, {len(careers)} carreras, "
@@ -436,46 +436,101 @@ class Command(BaseCommand):
                 username = f"student_{student_num_global:04d}"
                 email = f"{username}@uclv.cu"
                 
-                user, _ = User.objects.get_or_create(
-                    username=username,
-                    defaults={
-                        "email": email,
-                        "first_name": first_name,
-                        "last_name": last_name,
-                    }
-                )
-                if not user.has_usable_password():
-                    user.set_password("Password123!")
-                    user.save()
-                
-                # Asignar rol estudiante
-                user.groups.add(Group.objects.get(name='estudiante'))
-                
-                # Crear estudiante
-                student, _ = Student.objects.get_or_create(
-                    user=user,
-                    defaults={
-                        "ci": f"{random.randint(90000000000, 99999999999)}",
-                        "student_id": f"{group.career_year.career.code}-{group.name}-{student_num_global:04d}",
-                        "birth_date": date(random.randint(1999, 2006), random.randint(1, 12), random.randint(1, 28)),
-                        "gender": random.choice(['M', 'F']),
-                        "group": group,
-                        "address": f"Calle {random.randint(1, 100)}, Apt {random.randint(1, 99)}",
-                        "province": random.choice(["Villa Clara", "La Habana", "Santiago"]),
-                        "municipality": random.choice(["Santa Clara", "Camajuaní", "Remedios", "Encrucijada"]),
-                        "phone": f"+53 4222-{random.randint(1000, 9999)}",
-                        "emergency_phone": f"+53 4222-{random.randint(1000, 9999)}",
-                        "illnesses": random.choice(health_conditions),
-                        "medications": random.choice(medications),
-                        "is_militant": random.choice([True, False, False]),  # 33% militantes
-                        "is_cadet_minint": random.choice([True, False, False, False, False]),
-                        "is_cadet_far": random.choice([True, False, False, False, False]),
-                        "academic_performance": random.choice([
-                            None, "Buen aprovechamiento", "Aprovechamiento medio", "Bajo aprovechamiento"
-                        ]),
-                        "disciplinary_process": None,  # Se inicializa en None
-                    }
-                )
+                # Crear usuario y estudiante usando StudentCreateSerializer (flujo frontend)
+                serializer_payload = {
+                    "username": username,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "password": "Password123!",
+                    "ci": f"{random.randint(90000000000, 99999999999)}",
+                    "gender": random.choice(['M', 'F']),
+                    "address": f"Calle {random.randint(1, 100)}, Apt {random.randint(1, 99)}",
+                    "province": random.choice(["Villa Clara", "La Habana", "Santiago"]),
+                    "municipality": random.choice(["Santa Clara", "Camajuaní", "Remedios", "Encrucijada"]),
+                    "phone": f"+53 4222-{random.randint(1000, 9999)}",
+                    "emergency_phone": f"+53 4222-{random.randint(1000, 9999)}",
+                    # academic: pasar career id y year (auto-asignación de grupo)
+                    "career": group.career_year.career.id,
+                    "year": group.career_year.year,
+                    "academic_performance": random.choice([
+                        None, "Buen aprovechamiento", "Aprovechamiento medio", "Bajo aprovechamiento"
+                    ]),
+                    # salud y perfil
+                    "illnesses": random.choice(health_conditions),
+                    "medications": random.choice(medications),
+                    "is_militant": random.choice([True, False, False]),
+                    "is_cadet_minint": random.choice([True, False, False, False, False]),
+                    "is_cadet_far": random.choice([True, False, False, False, False]),
+                    "disciplinary_process": None,
+                }
+                # Para ambas rutas: agregar birth_date
+                birth_date_value = date(random.randint(1999, 2006), random.randint(1, 12), random.randint(1, 28))
+                serializer_payload["birth_date"] = birth_date_value
+
+                # Evitar crear usuario duplicado si ya existe
+                if User.objects.filter(username=username).exists():
+                    user = User.objects.get(username=username)
+                    student, _ = Student.objects.get_or_create(
+                        user=user,
+                        defaults={
+                            "ci": serializer_payload["ci"],
+                            "group": group,
+                            "birth_date": birth_date_value,
+                            "student_id": f"SID-{username}",
+                            "address": serializer_payload["address"],
+                            "province": serializer_payload["province"],
+                            "municipality": serializer_payload["municipality"],
+                            "phone": serializer_payload["phone"],
+                            "emergency_phone": serializer_payload["emergency_phone"],
+                            "illnesses": serializer_payload["illnesses"],
+                            "medications": serializer_payload["medications"],
+                            "is_militant": serializer_payload["is_militant"],
+                            "is_cadet_minint": serializer_payload["is_cadet_minint"],
+                            "is_cadet_far": serializer_payload["is_cadet_far"],
+                            "academic_performance": serializer_payload["academic_performance"],
+                            "disciplinary_process": serializer_payload["disciplinary_process"],
+                        }
+                    )
+                else:
+                    serializer = StudentCreateSerializer(data=serializer_payload)
+                    if serializer.is_valid():
+                        student = serializer.save()
+                        user = student.user
+                    else:
+                        # Fallback: crear por ORM si el serializer falla
+                        user, _ = User.objects.get_or_create(
+                            username=username,
+                            defaults={
+                                "email": email,
+                                "first_name": first_name,
+                                "last_name": last_name,
+                            }
+                        )
+                        if not user.has_usable_password():
+                            user.set_password("Password123!")
+                            user.save()
+                        user.groups.add(Group.objects.get(name='estudiante'))
+                        student, _ = Student.objects.get_or_create(
+                            user=user,
+                            defaults={
+                                "ci": serializer_payload["ci"],
+                                "group": group,
+                                "birth_date": birth_date_value,
+                                "student_id": f"SID-{username}",
+                                "address": serializer_payload["address"],
+                                "province": serializer_payload["province"],
+                                "municipality": serializer_payload["municipality"],
+                                "phone": serializer_payload["phone"],
+                                "emergency_phone": serializer_payload["emergency_phone"],
+                                "illnesses": serializer_payload["illnesses"],
+                                "medications": serializer_payload["medications"],
+                                "is_militant": serializer_payload["is_militant"],
+                                "is_cadet_minint": serializer_payload["is_cadet_minint"],
+                                "is_cadet_far": serializer_payload["is_cadet_far"],
+                                "academic_performance": serializer_payload["academic_performance"],
+                                "disciplinary_process": payload["disciplinary_process"],
+                            }
+                        )
                 
                 # Asignar cuarto en forma rotatoria para distribuir equilibradamente
                 if room_index < len(rooms):
