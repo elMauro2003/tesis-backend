@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from apps.academic.models import CareerYear
 from apps.academic.serializers import GroupSerializer
 from .models import Student, Professor, Dean, GroupAdvisor, YearLeadProfessor, WingSupervisor
 
@@ -79,36 +80,72 @@ class StudentCreateSerializer(serializers.ModelSerializer):
     """
     Crea un Student junto con su User en una sola operación atómica.
     Recibe los datos del user anidados.
+    El grupo se auto-asigna basado en career y year.
     """
     username   = serializers.CharField(write_only=True)
-    email      = serializers.EmailField(write_only=True)
     first_name = serializers.CharField(write_only=True)
     last_name  = serializers.CharField(write_only=True)
     password   = serializers.CharField(write_only=True, style={"input_type": "password"})
+    
+    # Auto-asignación de grupo basado en carrera y año
+    career = serializers.IntegerField(write_only=True, help_text="ID de la carrera")
+    year   = serializers.IntegerField(write_only=True, help_text="Año académico (1-5)")
 
     class Meta:
         model  = Student
         fields = [
-            # Campos del User
-            "username", "email", "first_name", "last_name", "password",
-            # Campos del Student
-            "ci", "student_id", "birth_date", "gender",
+            # PASO 1: Datos Personales
+            "username", "first_name", "last_name", "password",
+            "ci", "gender",
             "address", "province", "municipality", "phone", "emergency_phone",
+            # PASO 2: Datos Académicos
+            "career", "year", "academic_performance",
+            # PASO 3: Salud y Perfil
             "illnesses", "medications",
             "is_militant", "is_cadet_minint", "is_cadet_far",
-            "academic_performance", "disciplinary_process",
-            "group",
+            "disciplinary_process",
         ]
+        extra_kwargs = {
+            # PASO 2: Campos opcionales
+            "academic_performance": {"required": False, "allow_blank": True},
+            # PASO 3: Campos opcionales
+            "illnesses": {"required": False, "allow_blank": True},
+            "medications": {"required": False, "allow_blank": True},
+            "is_militant": {"required": False},
+            "is_cadet_minint": {"required": False},
+            "is_cadet_far": {"required": False},
+            "disciplinary_process": {"required": False, "allow_blank": True},
+        }
 
     def create(self, validated_data):
         from django.db import transaction
         from django.contrib.auth.models import Group as DjangoGroup
+        from rest_framework.exceptions import NotFound
 
         # Extraer campos del User
         user_fields = {
             k: validated_data.pop(k)
-            for k in ["username", "email", "first_name", "last_name", "password"]
+            for k in ["username", "first_name", "last_name", "password"]
         }
+        
+        # Auto-asignar grupo basado en career y year
+        career_id = validated_data.pop("career")
+        year = validated_data.pop("year")
+        
+        try:
+            career_year = CareerYear.objects.get(career_id=career_id, year=year)
+        except CareerYear.DoesNotExist:
+            raise NotFound(
+                detail=f"No existe año académico para la carrera {career_id} año {year}"
+            )
+        
+        group = career_year.groups.first()
+        if not group:
+            raise NotFound(
+                detail=f"No hay grupos disponibles para {career_year}"
+            )
+        
+        validated_data["group"] = group
 
         with transaction.atomic():
             # Crear User con contraseña hasheada

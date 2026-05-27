@@ -41,9 +41,10 @@ Año académico: Septiembre 2025 — Julio 2026
 import random
 from datetime import datetime, date, timedelta
 from django.core.management.base import BaseCommand
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
 from django.db.models import F
 from django.utils import timezone
+from apps.authentication.models import User
 
 from apps.academic.models import Faculty, Career, CareerYear, Group as StudentGroup
 from apps.actors.models import Student, Professor, Dean, YearLeadProfessor, GroupAdvisor, WingSupervisor
