@@ -120,7 +120,7 @@ class StudentCreateSerializer(serializers.ModelSerializer):
             "birth_date": {"required": False, "allow_null": True},
         }
     def create(self, validated_data):
-        from django.db import transaction
+        from django.db import transaction, IntegrityError
         from django.contrib.auth.models import Group as DjangoGroup
         from rest_framework.exceptions import NotFound
 
@@ -159,8 +159,13 @@ class StudentCreateSerializer(serializers.ModelSerializer):
                 random.randint(1, 28),
             )
         with transaction.atomic():
-            # Crear User con contraseña hasheada
-            user = User.objects.create_user(**user_fields)
+            try:
+                # Crear User con contraseña hasheada
+                user = User.objects.create_user(**user_fields)
+            except IntegrityError:
+                raise serializers.ValidationError({
+                    "username": ["Ya existe un usuario con ese username."]
+                })
             # Asignar rol 'estudiante' automáticamente
             student_group = DjangoGroup.objects.filter(name="estudiante").first()
             if student_group:
@@ -173,6 +178,11 @@ class StudentCreateSerializer(serializers.ModelSerializer):
             student = Student.objects.create(user=user, **validated_data)
 
         return student
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Ya existe un usuario con ese username.")
+        return value
 
 
 # ─── Professor ─────────────────────────────────────────────────────────────────
@@ -209,14 +219,24 @@ class ProfessorCreateSerializer(serializers.ModelSerializer):
         fields = ["username", "email", "first_name", "last_name", "password",
                   "employee_id", "department"]
 
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Ya existe un usuario con ese username.")
+        return value
+
     def create(self, validated_data):
-        from django.db import transaction
+        from django.db import transaction, IntegrityError
         user_fields = {
             k: validated_data.pop(k)
             for k in ["username", "email", "first_name", "last_name", "password"]
         }
         with transaction.atomic():
-            user      = User.objects.create_user(**user_fields)
+            try:
+                user = User.objects.create_user(**user_fields)
+            except IntegrityError:
+                raise serializers.ValidationError({
+                    "username": ["Ya existe un usuario con ese username."]
+                })
             professor = Professor.objects.create(user=user, **validated_data)
         return professor
 

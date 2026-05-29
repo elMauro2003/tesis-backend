@@ -41,6 +41,33 @@ class TestStudentCRUD:
         }, format="json")
         assert response.status_code == status.HTTP_201_CREATED
 
+    def test_create_student_rejects_existing_username(self, client_instructor, user_estudiante, group):
+        """Si el username ya existe, la API debe devolver el error en el campo username."""
+        url = reverse("student-list")
+        response = client_instructor.post(url, {
+            "username":   user_estudiante.username,
+            "first_name": "Otro",
+            "last_name":  "Alumno",
+            "password":   "EstPass456!",
+            "ci":         "95050554321",
+            "birth_date": "1995-05-05",
+            "gender":     "F",
+            "address":    "Calle 2",
+            "province":   "Villa Clara",
+            "municipality": "Santa Clara",
+            "phone":      "+53 4222-2222",
+            "emergency_phone": "+53 4222-3333",
+            "career":     group.career_year.career.pk,
+            "year":       group.career_year.year,
+        }, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "error" in response.data
+        assert response.data["error"]["code"] == "VALIDATION_ERROR"
+        assert "details" in response.data["error"]
+        assert "username" in response.data["error"]["details"]
+        assert response.data["error"]["details"]["username"][0] == "Ya existe un usuario con ese username."
+
     def test_partial_update_student(self, client_instructor, student):
         """RF-5: actualización parcial."""
         url      = reverse("student-detail", kwargs={"pk": student.pk})
