@@ -1,6 +1,12 @@
 from django.db import models
 
 
+class BuildingGender(models.TextChoices):
+    VARONES = "Varones", "Varones"
+    HEMBRAS = "Hembras", "Hembras"
+    MIXTO = "Mixto", "Mixto"
+
+
 class Site(models.Model):
     name = models.CharField(
         max_length=100, unique=True, verbose_name="Nombre",
@@ -37,6 +43,13 @@ class Building(models.Model):
     name = models.CharField(
         max_length=50, verbose_name="Nombre / Número",
         help_text="Nombre o número identificador del edificio",
+    )
+    gender = models.CharField(
+        max_length=10,
+        choices=BuildingGender.choices,
+        default=BuildingGender.MIXTO,
+        verbose_name="Sexo de los estudiantes",
+        help_text="Define qué sexo de estudiantes aloja el edificio",
     )
     address = models.TextField(
         blank=True, null=True, verbose_name="Dirección",
