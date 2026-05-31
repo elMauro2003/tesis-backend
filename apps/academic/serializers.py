@@ -3,10 +3,7 @@ from .models import Faculty, Career, CareerYear, Group
 
 
 class FacultySerializer(serializers.ModelSerializer):
-    career_count = serializers.IntegerField(
-        source="careers.count", read_only=True,
-        help_text="Número de carreras en esta facultad",
-    )
+    career_count = serializers.IntegerField(read_only=True, help_text="Número de carreras en esta facultad")
 
     class Meta:
         model  = Faculty

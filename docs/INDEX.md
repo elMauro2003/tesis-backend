@@ -22,10 +22,11 @@ Aquí encontrarás todo lo necesario para entender, configurar, usar y contribui
 
 5. **[API_ENDPOINTS.md](API_ENDPOINTS.md)** — Catálogo completo de 70+ endpoints con ejemplos HTTP
 6. **[SISTEMA_FLUJO_COMPLETO.md](SISTEMA_FLUJO_COMPLETO.md)** — Caso de uso real: ciclo de vida de un estudiante
+7. **[K6_GRAFANA.md](K6_GRAFANA.md)** — Pruebas de carga con k6 y visualización en Grafana
 
 ### 📜 Contexto Académico
 
-7. **[Contexto.md](../Contexto.md)** — Tesis: problema, objetivos, justificación tecnológica, requisitos funcionales
+8. **[Contexto.md](../Contexto.md)** — Tesis: problema, objetivos, justificación tecnológica, requisitos funcionales
 
 ---
 
@@ -113,6 +114,20 @@ Aquí encontrarás todo lo necesario para entender, configurar, usar y contribui
 
 ---
 
+### [K6_GRAFANA.md](K6_GRAFANA.md)
+
+**Objetivo:** Ejecutar pruebas de carga con k6 y ver métricas en Grafana.
+
+**Contiene:**
+- Script base de carga para autenticación y endpoint protegido
+- docker-compose con InfluxDB + Grafana
+- Datasource provisionado automáticamente
+- Pasos exactos para correr la prueba en Windows
+
+**Para quién:** QA, performance testing, validación de escalabilidad.
+
+---
+
 ## 🎯 Flujos de Lectura Recomendados
 
 ### 👨‍💻 Soy desarrollador backend
@@ -134,8 +149,9 @@ Aquí encontrarás todo lo necesario para entender, configurar, usar y contribui
 
 1. [README.md](../README.md) — Instalación
 2. [SEED_INSTALLATION.md](SEED_INSTALLATION.md) — Cargar datos de prueba
-3. [SISTEMA_FLUJO_COMPLETO.md](SISTEMA_FLUJO_COMPLETO.md) — Casos de uso
-4. [API_ENDPOINTS.md](API_ENDPOINTS.md) — Referencia de endpoints
+3. [K6_GRAFANA.md](K6_GRAFANA.md) — Pruebas de carga
+4. [SISTEMA_FLUJO_COMPLETO.md](SISTEMA_FLUJO_COMPLETO.md) — Casos de uso
+5. [API_ENDPOINTS.md](API_ENDPOINTS.md) — Referencia de endpoints
 
 ### 🎓 Soy estudiante/investigador
 
@@ -214,6 +230,7 @@ Tests (tests/) — Validación de cambios
 | ¿Cómo integro el frontend? | → [AUTENTICACION.md](AUTENTICACION.md) + [API_ENDPOINTS.md](API_ENDPOINTS.md) |
 | Quiero entender el diseño | → [ARQUITECTURA.md](ARQUITECTURA.md) |
 | ¿Cuál es el caso de uso real? | → [SISTEMA_FLUJO_COMPLETO.md](SISTEMA_FLUJO_COMPLETO.md) |
+| Quiero probar carga y ver métricas | → [K6_GRAFANA.md](K6_GRAFANA.md) |
 
 ---
 

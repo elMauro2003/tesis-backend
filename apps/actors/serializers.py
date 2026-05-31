@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from apps.academic.models import CareerYear
 from apps.academic.serializers import GroupSerializer
+from apps.operations.models import Assignment
 from .models import Student, Professor, Dean, GroupAdvisor, YearLeadProfessor, WingSupervisor
 
 User = get_user_model()
@@ -60,9 +61,14 @@ class StudentSerializer(serializers.ModelSerializer):
         }
 
 
+class StudentDetailSerializer(StudentSerializer):
+    """Alias explícito para el serializer de detalle."""
+    pass
+
+
 class StudentListSerializer(serializers.ModelSerializer):
     full_name    = serializers.CharField(read_only=True)
-    group_name   = serializers.CharField(source="group.__str__", read_only=True)
+    group_name   = serializers.SerializerMethodField()
     has_room     = serializers.SerializerMethodField()
 
     class Meta:
@@ -73,7 +79,10 @@ class StudentListSerializer(serializers.ModelSerializer):
         ]
 
     def get_has_room(self, obj) -> bool:
-        return obj.current_room is not None
+        return obj.active_assignment is not None
+
+    def get_group_name(self, obj) -> str:
+        return str(obj.group)
 
 
 class StudentCreateSerializer(serializers.ModelSerializer):
@@ -185,16 +194,20 @@ class StudentCreateSerializer(serializers.ModelSerializer):
         return value
 
 
+# Compatibilidad hacia atrás con imports existentes.
+StudentSerializer = StudentDetailSerializer
+
+
 # ─── Professor ─────────────────────────────────────────────────────────────────
 
 class ProfessorSerializer(serializers.ModelSerializer):
     user      = UserInlineSerializer(read_only=True)
     full_name = serializers.CharField(source="user.get_full_name", read_only=True)
     # Sub-roles actuales del profesor
-    is_dean                = serializers.BooleanField(source="dean.__bool__",               read_only=True, default=False)
-    is_group_advisor       = serializers.BooleanField(source="group_advisor.__bool__",      read_only=True, default=False)
-    is_year_lead_professor = serializers.BooleanField(source="year_lead_professor.__bool__",read_only=True, default=False)
-    is_wing_supervisor     = serializers.BooleanField(source="wing_supervisor.__bool__",    read_only=True, default=False)
+    is_dean                = serializers.BooleanField(read_only=True)
+    is_group_advisor       = serializers.BooleanField(read_only=True)
+    is_year_lead_professor = serializers.BooleanField(read_only=True)
+    is_wing_supervisor     = serializers.BooleanField(read_only=True)
 
     class Meta:
         model  = Professor
@@ -242,6 +255,7 @@ class ProfessorCreateSerializer(serializers.ModelSerializer):
 
 
 # ─── Sub-roles ─────────────────────────────────────────────────────────────────
+
 
 class DeanSerializer(serializers.ModelSerializer):
     professor_name = serializers.CharField(source="professor.__str__", read_only=True)

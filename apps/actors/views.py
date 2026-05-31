@@ -1,3 +1,5 @@
+from django.db.models import Prefetch
+from django.db.models import Exists, OuterRef
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -6,6 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from core.permissions import IsInstructor, IsDirectivo, IsAdmin, IsStudentReader, IsInstructorOrDirectivo
+from core.pagination import StudentCursorPagination
 
 from .models import Student, Professor, Dean, GroupAdvisor, YearLeadProfessor, WingSupervisor
 from .serializers import (
@@ -14,6 +17,7 @@ from .serializers import (
     DeanSerializer, GroupAdvisorSerializer,
     YearLeadProfessorSerializer, WingSupervisorSerializer,
 )
+from apps.operations.models import Assignment
 
 
 @extend_schema_view(
@@ -25,6 +29,7 @@ from .serializers import (
     destroy=extend_schema(tags=["students"], summary="Eliminar estudiante (RF-6)"),
 )
 class StudentViewSet(viewsets.ModelViewSet):
+    pagination_class = StudentCursorPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
         "gender", "group", "group__career_year",
@@ -44,6 +49,24 @@ class StudentViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated(), IsInstructorOrDirectivo()]
 
     def get_queryset(self):
+        active_assignments = Assignment.objects.select_related(
+            "room__wing__building",
+        ).only(
+            "id",
+            "student_id",
+            "room_id",
+            "assigned_date",
+            "released_date",
+            "room__id",
+            "room__number",
+            "room__wing__id",
+            "room__wing__name",
+            "room__wing__building__id",
+            "room__wing__building__name",
+        ).filter(
+            released_date__isnull=True,
+        ).order_by("-assigned_date")
+
         qs = (
             Student.objects
             .select_related(
@@ -51,10 +74,9 @@ class StudentViewSet(viewsets.ModelViewSet):
                 "group__career_year__career__faculty",
             )
             .prefetch_related(
-                # Prefetch solo asignaciones activas para current_room_info
-                "assignments__room__wing__building",
+                Prefetch("assignments", queryset=active_assignments, to_attr="active_assignments"),
             )
-            .order_by("user__last_name", "user__first_name")
+            .order_by("-created_at")
         )
 
         user = self.request.user
@@ -106,11 +128,12 @@ class ProfessorViewSet(viewsets.ModelViewSet):
         return (
             Professor.objects
             .select_related("user")
-            .prefetch_related(
-                "dean__faculty",
-                "group_advisor__group",
-                "year_lead_professor__career_year__career",
-                "wing_supervisor__wing__building",
+            .prefetch_related("dean", "group_advisor", "year_lead_professor", "wing_supervisor")
+            .annotate(
+                is_dean=Exists(Dean.objects.filter(professor=OuterRef("pk"))),
+                is_group_advisor=Exists(GroupAdvisor.objects.filter(professor=OuterRef("pk"))),
+                is_year_lead_professor=Exists(YearLeadProfessor.objects.filter(professor=OuterRef("pk"))),
+                is_wing_supervisor=Exists(WingSupervisor.objects.filter(professor=OuterRef("pk"))),
             )
             .order_by("user__last_name", "user__first_name")
         )

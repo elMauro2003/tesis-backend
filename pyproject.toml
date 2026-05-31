@@ -16,6 +16,8 @@ dependencies = [
     "django-filter==24.2",
     "drf-spectacular==0.27.2",
     "python-decouple==3.8",
+    "gunicorn>=26.0.0",
+    "waitress>=3.0.2",
 ]
 
 [tool.setuptools]

@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import viewsets, filters
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema_view, extend_schema
@@ -26,7 +27,7 @@ def _academic_schema(tag, summary_list, summary_detail):
 
 @_academic_schema("academic", "Listar facultades", "facultad")
 class FacultyViewSet(viewsets.ModelViewSet):
-    queryset           = Faculty.objects.prefetch_related("careers").order_by("name")
+    queryset           = Faculty.objects.annotate(career_count=Count("careers", distinct=True)).order_by("name")
     serializer_class   = FacultySerializer
     permission_classes = [IsAuthenticated, IsDirectivo]
     filter_backends    = [filters.SearchFilter, filters.OrderingFilter]

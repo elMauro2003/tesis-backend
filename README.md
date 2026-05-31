@@ -291,6 +291,7 @@ uv run pytest tests/unit/test_permissions.py::test_directivo_can_create_site -v
 
 - Mercury: [tests/performance/test_mercury_performance.py](tests/performance/test_mercury_performance.py)
 - Guía de uso: [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
+- k6 + Grafana: [docs/K6_GRAFANA.md](docs/K6_GRAFANA.md)
 
 ```bash
 uv run pytest tests/performance -m performance

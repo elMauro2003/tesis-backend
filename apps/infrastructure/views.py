@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.db.models.deletion import ProtectedError
 from rest_framework import viewsets, filters, status
 from django_filters.rest_framework import DjangoFilterBackend
@@ -21,7 +22,7 @@ from .serializers import (
     destroy=extend_schema(tags=["infrastructure"], summary="Eliminar sede (RF-29)"),
 )
 class SiteViewSet(viewsets.ModelViewSet):
-    queryset           = Site.objects.prefetch_related("buildings").order_by("name")
+    queryset           = Site.objects.annotate(building_count=Count("buildings", distinct=True)).order_by("name")
     serializer_class   = SiteSerializer
     permission_classes = [IsAuthenticated, IsDirectivo]
     filter_backends    = [filters.SearchFilter]
@@ -55,7 +56,7 @@ class BuildingViewSet(viewsets.ModelViewSet):
     queryset = (
         Building.objects
         .select_related("site")
-        .prefetch_related("wings")
+        .annotate(wing_count=Count("wings", distinct=True))
         .order_by("site", "name")
     )
     serializer_class   = BuildingSerializer
@@ -77,7 +78,7 @@ class WingViewSet(viewsets.ModelViewSet):
     queryset = (
         Wing.objects
         .select_related("building__site")
-        .prefetch_related("rooms")
+        .annotate(room_count=Count("rooms", distinct=True))
         .order_by("building", "name")
     )
     serializer_class   = WingSerializer

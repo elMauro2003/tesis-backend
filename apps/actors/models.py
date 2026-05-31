@@ -87,7 +87,16 @@ class Student(models.Model):
     @property
     def active_assignment(self):
         """Devuelve la asignación activa o None — fuente única de verdad."""
-        return self.assignments.filter(released_date__isnull=True).first()
+        prefetched = getattr(self, "active_assignments", None)
+        if prefetched is not None:
+            return prefetched[0] if prefetched else None
+
+        return (
+            self.assignments
+            .select_related("room__wing__building")
+            .filter(released_date__isnull=True)
+            .first()
+        )
 
     @property
     def current_room(self):

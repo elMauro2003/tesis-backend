@@ -3,7 +3,7 @@ from .models import Site, Building, Wing, Room
 
 
 class SiteSerializer(serializers.ModelSerializer):
-    building_count = serializers.IntegerField(source="buildings.count", read_only=True)
+    building_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model  = Site
@@ -13,7 +13,7 @@ class SiteSerializer(serializers.ModelSerializer):
 
 class BuildingSerializer(serializers.ModelSerializer):
     site_name  = serializers.CharField(source="site.name", read_only=True)
-    wing_count = serializers.IntegerField(source="wings.count", read_only=True)
+    wing_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model  = Building
@@ -24,7 +24,7 @@ class BuildingSerializer(serializers.ModelSerializer):
 class WingSerializer(serializers.ModelSerializer):
     building_name = serializers.CharField(source="building.name", read_only=True)
     site_name     = serializers.CharField(source="building.site.name", read_only=True)
-    room_count    = serializers.IntegerField(source="rooms.count", read_only=True)
+    room_count    = serializers.IntegerField(read_only=True)
 
     class Meta:
         model  = Wing
