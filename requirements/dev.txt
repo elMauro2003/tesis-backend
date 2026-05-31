@@ -5,3 +5,4 @@ pytest-cov==5.0.0
 factory-boy==3.3.0
 ipython==8.25.0
 django-extensions==3.2.3
+django-mercury-performance==0.1.2

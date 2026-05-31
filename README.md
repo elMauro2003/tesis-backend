@@ -276,15 +276,24 @@ http://localhost:8000/api/v1/schema/  # OpenAPI 3.0 JSON
 
 ```bash
 # Ejecutar todos los tests
-pytest -v
+uv run pytest -v
 
 # Con cobertura
-pytest --cov=apps --cov-report=html
+uv run pytest --cov=apps --cov-report=html
 # Ver reporte: htmlcov/index.html
 
 # Tests específicos
-pytest tests/integration/test_assignments.py -v
-pytest tests/unit/test_permissions.py::test_directivo_can_create_site -v
+uv run pytest tests/integration/test_assignments.py -v
+uv run pytest tests/unit/test_permissions.py::test_directivo_can_create_site -v
+```
+
+### Performance y carga
+
+- Mercury: [tests/performance/test_mercury_performance.py](tests/performance/test_mercury_performance.py)
+- Guía de uso: [docs/PERFORMANCE.md](docs/PERFORMANCE.md)
+
+```bash
+uv run pytest tests/performance -m performance
 ```
 
 ### Estadísticas actuales

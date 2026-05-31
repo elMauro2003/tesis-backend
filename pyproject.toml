@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uclv-residencias"
+version = "0.1.0"
+description = "Backend REST para gestión de residencias estudiantiles UCLV"
+requires-python = ">=3.12"
+dependencies = [
+    "Django==5.0.6",
+    "djangorestframework==3.15.2",
+    "psycopg2-binary==2.9.9",
+    "djangorestframework-simplejwt==5.3.1",
+    "django-cors-headers==4.3.1",
+    "django-filter==24.2",
+    "drf-spectacular==0.27.2",
+    "python-decouple==3.8",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["apps*", "config*", "core*", "tests*"]
+
+[dependency-groups]
+dev = [
+    "django-extensions==3.2.3",
+    "django-mercury-performance==0.1.2",
+    "factory-boy==3.3.0",
+    "ipython==8.25.0",
+    "pytest==8.2.2",
+    "pytest-cov==5.0.0",
+    "pytest-django==4.8.0",
+]
