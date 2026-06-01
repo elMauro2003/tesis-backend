@@ -2,7 +2,7 @@
 #
 # Orquesta dos servicios para desarrollo local:
 #   db  → PostgreSQL 16 (motor de BD definido en tesis §1.6.5)
-#   web → Django + DRF corriendo con runserver
+#   web → Django + DRF corriendo con Gunicorn/Uvicorn
 #
 # Uso:
 #   docker compose up --build        → primera vez
@@ -39,7 +39,7 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn -c deploy/gunicorn_conf.py config.asgi:application
     volumes:
       # Bind mount: cambios en el código se reflejan sin rebuild
       - .:/app
@@ -50,7 +50,7 @@ services:
     environment:
       # Sobreescribe DB_HOST para apuntar al servicio 'db' de compose
       DB_HOST: db
-      DJANGO_SETTINGS_MODULE: config.settings.dev
+      DJANGO_SETTINGS_MODULE: config.settings.prod
     depends_on:
       db:
         condition: service_healthy

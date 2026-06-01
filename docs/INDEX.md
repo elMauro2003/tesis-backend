@@ -12,21 +12,22 @@ Aquí encontrarás todo lo necesario para entender, configurar, usar y contribui
 
 1. **[README.md](../README.md)** — Descripción general, instalación en 5 minutos, estructura del proyecto
 2. **[SEED_INSTALLATION.md](SEED_INSTALLATION.md)** — Cómo cargar datos de prueba en la BD
+3. **[DESPLIEGUE.md](DESPLIEGUE.md)** — Guía completa de despliegue (local, Docker, producción)
 
 ### 🏗️ Entender el Diseño
 
-3. **[ARQUITECTURA.md](ARQUITECTURA.md)** — Modelo de datos, capas, patrones SOLID, decisiones técnicas
-4. **[AUTENTICACION.md](AUTENTICACION.md)** — JWT, RBAC con 9 roles, permisos a nivel de objeto, seguridad
+4. **[ARQUITECTURA.md](ARQUITECTURA.md)** — Modelo de datos, capas, patrones SOLID, decisiones técnicas
+5. **[AUTENTICACION.md](AUTENTICACION.md)** — JWT, RBAC con 9 roles, permisos a nivel de objeto, seguridad
 
 ### 📡 Usar la API
 
-5. **[API_ENDPOINTS.md](API_ENDPOINTS.md)** — Catálogo completo de 70+ endpoints con ejemplos HTTP
-6. **[SISTEMA_FLUJO_COMPLETO.md](SISTEMA_FLUJO_COMPLETO.md)** — Caso de uso real: ciclo de vida de un estudiante
-7. **[K6_GRAFANA.md](K6_GRAFANA.md)** — Pruebas de carga con k6 y visualización en Grafana
+6. **[API_ENDPOINTS.md](API_ENDPOINTS.md)** — Catálogo completo de 70+ endpoints con ejemplos HTTP
+7. **[SISTEMA_FLUJO_COMPLETO.md](SISTEMA_FLUJO_COMPLETO.md)** — Caso de uso real: ciclo de vida de un estudiante
+8. **[K6_GRAFANA.md](K6_GRAFANA.md)** — Pruebas de carga con k6 y visualización en Grafana
 
 ### 📜 Contexto Académico
 
-8. **[Contexto.md](../Contexto.md)** — Tesis: problema, objetivos, justificación tecnológica, requisitos funcionales
+9. **[Contexto.md](../Contexto.md)** — Tesis: problema, objetivos, justificación tecnológica, requisitos funcionales
 
 ---
 
@@ -46,6 +47,45 @@ Aquí encontrarás todo lo necesario para entender, configurar, usar y contribui
 - Herencia multi-tabla (User → Student/Professor)
 
 **Para quién:** Desarrolladores, arquitectos, integradores con otros sistemas.
+
+---
+
+### [DESPLIEGUE.md](DESPLIEGUE.md)
+
+**Objetivo:** Desplegar y operar el sistema en diferentes ambientes.
+
+**Contiene:**
+- Arquitectura ASGI (Uvicorn + Gunicorn)
+- Despliegue local con Uvicorn (con/sin workers)
+- Despliegue con Docker Compose
+- Despliegue en producción (Linux, PostgreSQL, Nginx, SSL)
+- Configuración supervisor y systemd
+- Nginx como reverse proxy
+- SSL/HTTPS con Let's Encrypt
+- PostgreSQL setup y optimizaciones
+- Backups automatizados
+- Monitoreo y logs
+- Troubleshooting de errores comunes
+
+**Variables de entorno críticas:**
+- `DEBUG`, `SECRET_KEY`, `ALLOWED_HOSTS`
+- `DATABASE_URL` (SQLite dev / PostgreSQL prod)
+- `SECURE_SSL_REDIRECT`, `SESSION_COOKIE_SECURE`
+
+**Comando rápido (local con 4 workers):**
+```bash
+uv run uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --workers 4
+```
+
+**Comando producción (Gunicorn + Supervisor):**
+```bash
+gunicorn config.asgi:application \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --workers 8 \
+    --bind 0.0.0.0:8000
+```
+
+**Para quién:** DevOps, SRE, administradores de sistemas, desarrolladores de backend.
 
 ---
 
@@ -225,23 +265,29 @@ Tests (tests/) — Validación de cambios
 |----------|----------|
 | No sé por dónde empezar | → [README.md](../README.md) |
 | No me funciona el seed | → [SEED_INSTALLATION.md](SEED_INSTALLATION.md) |
+| ¿Cómo despliego la app? | → [DESPLIEGUE.md](DESPLIEGUE.md) |
 | ¿Qué endpoints hay? | → [API_ENDPOINTS.md](API_ENDPOINTS.md) o http://localhost:8000/api/v1/docs/ |
 | ¿Por qué rechazo mi request? | → [AUTENTICACION.md](AUTENTICACION.md) (permisos/roles) |
 | ¿Cómo integro el frontend? | → [AUTENTICACION.md](AUTENTICACION.md) + [API_ENDPOINTS.md](API_ENDPOINTS.md) |
 | Quiero entender el diseño | → [ARQUITECTURA.md](ARQUITECTURA.md) |
 | ¿Cuál es el caso de uso real? | → [SISTEMA_FLUJO_COMPLETO.md](SISTEMA_FLUJO_COMPLETO.md) |
 | Quiero probar carga y ver métricas | → [K6_GRAFANA.md](K6_GRAFANA.md) |
+| ¿Cuál es el rendimiento actual? | → [performance/k6/REPORTE_RENDIMIENTO.md](../performance/k6/REPORTE_RENDIMIENTO.md) |
 
 ---
 
 ## 📊 Estadísticas del Proyecto
 
 - **Endpoints REST:** 70+
-- **Tests:** 140 (todos ✅ PASSING)
+- **Tests:** 140+ (todos ✅ PASSING)
 - **Cobertura:** >80%
 - **Modelos:** 18
 - **Serializadores:** 20+
 - **ViewSets:** 12
+- **Throughput máximo:** 7.50 RPS (100 VUs, 4 workers)
+- **Latencia P95 (prod):** ~25 s (100 VUs) — límite por SQLite dev
+- **Disponibilidad:** 100% en todas las pruebas de carga
+
 - **Roles:** 9
 - **Permisos:** 14 clases
 - **Migraciones:** 4 iniciales + actualizaciones

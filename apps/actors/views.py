@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
 from core.permissions import IsInstructor, IsDirectivo, IsAdmin, IsStudentReader, IsInstructorOrDirectivo
 from core.pagination import StudentCursorPagination
@@ -28,6 +30,7 @@ from apps.operations.models import Assignment
     partial_update=extend_schema(tags=["students"], summary="Actualizar estudiante parcial (RF-5)"),
     destroy=extend_schema(tags=["students"], summary="Eliminar estudiante (RF-6)"),
 )
+@method_decorator(cache_page(60 * 5), name="list")
 class StudentViewSet(viewsets.ModelViewSet):
     pagination_class = StudentCursorPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

@@ -2,138 +2,238 @@
 
 **Fecha:** 31 de mayo de 2026  
 **Proyecto:** UCLV Residencias Backend  
-**Servidor:** Waitress @ localhost:8000  
-**Base de datos:** SQLite Dev
+**Base de datos:** SQLite Dev  
+**Usuario de prueba:** `admin_bd`
 
 ---
 
-## ✅ RESUMEN EJECUTIVO
+## 📝 HISTORIALES DE PRUEBAS
 
-Se ejecutaron dos pruebas de carga contra el endpoint `/api/v1/estudiantes/`:
+### 🔄 Experimento 1: 2 Workers (Servidor local)
 
-| Métrica | Prueba 1 (50 VUs) | Prueba 2 (100 VUs) |
-|---|---:|---:|
-| Escenario | Flujo Completo (auth + query) | Solo Consulta (token compartido) |
-| Usuarios concurrentes | 50 | 100 |
-| Iteraciones | 100 | 100 |
-| Requests totales | 200 | 101 |
-| Checks exitosos | 100.00% (200/200) | 97.05% (99/102) |
-| Fallos HTTP | 0.00% | 2.97% (timeouts) |
-| Duración total | ~37.1s | ~61.9s |
+**Servidor:** Uvicorn ASGI @ `127.0.0.1:8001`  
+**Workers:** 2  
+
+---
+
+### 🚀 Experimento 2: 4 Workers (Servidor local - ACTUAL)
+
+**Servidor:** Uvicorn ASGI @ `127.0.0.1:8002`  
+**Workers:** 4  
+
+Este es el experimento actual que refleja la prueba con mayor paralelismo.
+
+---
+
+## ✅ RESUMEN COMPARATIVO DE EXPERIMENTOS
+
+| Métrica | 2W - 50VU | 2W - 100VU | 4W - 50VU | 4W - 100VU |
+|---|---:|---:|---:|---:|
+| Escenario | Login + consulta | Login + consulta | Login + consulta | Login + consulta |
+| Usuarios concurrentes | 50 | 100 | 50 | 100 |
+| Workers | 2 | 2 | 4 | 4 |
+| Iteraciones completadas | 100 | 100 | 100 | 100 |
+| Requests totales | 200 | 200 | 200 | 200 |
+| Checks exitosos | 100.00% | 100.00% | 100.00% | 100.00% |
+| Fallos HTTP | 0.00% | 0.00% | 0.00% | 0.00% |
+| Latencia promedio | 6.54 s | 13.51 s | 6.34 s | 12.45 s |
+| Latencia P95 | 13.67 s | 26.45 s | 13.29 s | 25.01 s |
+| RPS | 6.54 | 7.01 | 6.20 | 7.50 |
+| Duración total | ~30.6 s | ~28.5 s | ~32.2 s | ~26.7 s |
 
 ---
 
 ## 📈 RESULTADOS DETALLADOS
 
-### Prueba 1: 50 VUs - Flujo completo (autenticación + consulta)
+### Prueba 1: 50 VUs - Uvicorn con 2 workers
 
-**Objetivo:** simular usuarios reales que hacen login y luego consultan estudiantes.
+**Objetivo:** medir el comportamiento del stack local con workers async bajo carga moderada.
 
 #### Latencia HTTP
 
 | Percentil | Valor | Evaluación |
 |---|---:|---|
-| Mín | 1.84 s | ⚠️ Rápido |
-| Mediana | 8.16 s | ⚠️ Moderado |
-| Media | 8.25 s | ⚠️ Moderado |
-| P90 | 12.53 s | ⚠️ Lento |
-| P95 | 14.09 s | ❌ Muy lento |
-| P99 | 15.50 s | ❌ Muy lento |
-| Máx | 15.50 s | ❌ Inaceptable |
+| Mín | 155.16 ms | ✅ Muy rápido |
+| Mediana | 6.07 s | ⚠️ Alta |
+| Media | 6.54 s | ⚠️ Alta |
+| P90 | 13.57 s | ❌ Muy alta |
+| P95 | 13.67 s | ❌ Muy alta |
+| Máx | 13.93 s | ❌ Muy alta |
 
 #### Throughput y recursos
 
-- Requests/segundo: 5.40 RPS
-- Iteraciones/segundo: 2.70 IPS
-- Datos recibidos: 576 kB (16 kB/s)
-- Datos enviados: 67 kB (1.8 kB/s)
+- Requests/segundo: 6.54 RPS
+- Iteraciones/segundo: 3.27 IPS
+- Datos recibidos: 574 kB
+- Datos enviados: 67 kB
 
-#### Análisis
+#### Observaciones
 
-**Positivo:**
-- 100% de éxito en autenticación y consultas.
-- Cero errores HTTP.
-
-**Preocupación:**
-- La latencia p95 es muy alta para un endpoint de consulta.
-- Las respuestas se mantienen entre 1.8 y 15.5 segundos.
+- El login funcionó correctamente en todas las iteraciones.
+- No hubo timeouts ni errores HTTP.
+- La latencia sigue siendo alta, pero la estabilidad mejoró respecto a ejecuciones fallidas por autenticación.
 
 ---
 
-### Prueba 2: 100 VUs - Solo consulta (token compartido)
+### Prueba 2: 100 VUs - Uvicorn con 2 workers
 
-**Objetivo:** simular picos de tráfico con usuarios ya autenticados.
+**Objetivo:** estresar la concurrencia del servidor local con el mismo flujo real de login + consulta.
 
 #### Latencia HTTP
 
 | Percentil | Valor | Evaluación |
 |---|---:|---|
-| Mín | 517.95 ms | ✅ Aceptable |
-| Mediana | 3.27 s | ⚠️ Aceptable |
-| Media | 4.95 s | ⚠️ Lento |
-| P90 | 5.93 s | ⚠️ Lento |
-| P95 | 6.09 s | ❌ Muy lento |
-| P99 | 60.00 s | ❌ Timeout |
-| Máx | 60.00 s | ❌ Timeout |
+| Mín | 331.82 ms | ✅ Aceptable |
+| Mediana | 12.67 s | ❌ Alta |
+| Media | 13.51 s | ❌ Alta |
+| P90 | 26.41 s | ❌ Muy alta |
+| P95 | 26.45 s | ❌ Muy alta |
+| Máx | 26.48 s | ❌ Muy alta |
 
 #### Errores y confiabilidad
 
 | Métrica | Valor | Estado |
 |---|---:|---|
-| Checks exitosos | 97.05% (99/102) | ⚠️ Aceptable |
-| Fallos HTTP | 2.97% (3/101) | ⚠️ Preocupante |
-| Tipo de fallo | request timeout | Timeout del servidor |
+| Checks exitosos | 100.00% (200/200) | ✅ Correcto |
+| Fallos HTTP | 0.00% | ✅ Correcto |
+| Tipo de fallo | Ninguno | — |
 
 #### Throughput y recursos
 
-- Requests/segundo: 1.63 RPS
-- Iteraciones/segundo: 1.62 IPS
-- Datos recibidos: 446 kB (7.2 kB/s)
-- Datos enviados: 48 kB (774 B/s)
+- Requests/segundo: 7.01 RPS
+- Iteraciones/segundo: 3.51 IPS
+- Datos recibidos: 574 kB
+- Datos enviados: 67 kB
 
-#### Análisis
+#### Observaciones
 
-**Positivo:**
-- El servidor soporta 100 VUs sin caerse.
-- La mediana sigue siendo mejor que en la prueba de flujo completo.
+- El servidor sostuvo la carga sin errores.
+- La latencia creció de forma importante al duplicar la concurrencia.
+- Aunque la estabilidad es buena, el rendimiento no escala de forma lineal.
 
-**Crítico:**
-- Hubo 3 requests que llegaron al timeout de 60s.
-- El throughput cae de forma marcada respecto a la prueba 1.
+---
+
+### Prueba 3: 50 VUs - Uvicorn con 4 workers
+
+**Objetivo:** medir la mejora con el doble de workers async en la misma carga moderada.
+
+#### Latencia HTTP
+
+| Percentil | Valor | Comparación vs 2W |
+|---|---:|---|
+| Mín | 22.66 ms | 👍 Mejor |
+| Mediana | 4.55 s | 👍 25% mejor |
+| Media | 6.34 s | 👍 3% mejor |
+| P90 | 13.24 s | 👍 Similar |
+| P95 | 13.29 s | 👍 Similar |
+| Máx | 13.35 s | 👍 Similar |
+
+#### Errores y confiabilidad
+
+| Métrica | Valor | Estado |
+|---|---:|---|
+| Checks exitosos | 100.00% (200/200) | ✅ Correcto |
+| Fallos HTTP | 0.00% | ✅ Correcto |
+| Tipo de fallo | Ninguno | — |
+
+#### Throughput y recursos
+
+- Requests/segundo: 6.20 RPS
+- Iteraciones/segundo: 3.10 IPS
+- Datos recibidos: 574 kB
+- Datos enviados: 67 kB
+
+#### Observaciones
+
+- La latencia mediana mejoró un ~25% respecto a 2 workers.
+- El máximo se mantuvo en valores similares (~13.3s).
+- El throughput fue ligeramente inferior pero sin degradación en confiabilidad.
+
+---
+
+### Prueba 4: 100 VUs - Uvicorn con 4 workers (ACTUAL)
+
+**Objetivo:** validar la mejora de 4 workers bajo máxima carga.
+
+#### Latencia HTTP
+
+| Percentil | Valor | Comparación vs 2W @ 100VU |
+|---|---:|---|
+| Mín | 19.34 ms | 👍 Mejor |
+| Mediana | 11.15 s | 👍 12% mejor |
+| Media | 12.45 s | 👍 8% mejor |
+| P90 | 24.98 s | 👍 5% mejor |
+| P95 | 25.01 s | 👍 5% mejor |
+| Máx | 25.04 s | 👍 5% mejor |
+
+#### Errores y confiabilidad
+
+| Métrica | Valor | Estado |
+|---|---:|---|
+| Checks exitosos | 100.00% (200/200) | ✅ Correcto |
+| Fallos HTTP | 0.00% | ✅ Correcto |
+| Tipo de fallo | Ninguno | — |
+
+#### Throughput y recursos
+
+- Requests/segundo: 7.50 RPS
+- Iteraciones/segundo: 3.75 IPS
+- Duración total: 26.7s
+- Datos recibidos: 574 kB
+- Datos enviados: 67 kB
+
+#### Observaciones
+
+- **Mejora notable:** con 4 workers, la latencia mediana bajó de 12.67s a 11.15s (+12%).
+- **P95 más estable:** 25.01s vs 26.45s (5% de mejora).
+- **Throughput máximo:** 7.50 RPS es el más alto en todas las pruebas.
+- **Confiabilidad:** 100% de checks exitosos sin excepciones.
+- **Escalabilidad:** el servidor responde mejor al aumentar workers; la concurrencia se distribuye más efectivamente.
 
 ---
 
 ## 🔍 ANÁLISIS COMPARATIVO
 
 ```text
-50 VUs  → 5.40 RPS, 8.25s latencia (100% éxito)
-100 VUs → 1.63 RPS, 4.95s latencia (97% éxito, 3 timeouts)
+Escenario: 50 VUs
+───────────────────────────────────
+2 Workers → 6.54 RPS, 6.07s p50, 13.67s p95, 100% éxito
+4 Workers → 6.20 RPS, 4.55s p50, 13.29s p95, 100% éxito
+         ↓
+Beneficio: -5% RPS pero -25% latencia mediana
 
-Degradación: -70% en throughput, +2.97% en tasa de error
+───────────────────────────────────
+Escenario: 100 VUs (CARGA MÁXIMA)
+───────────────────────────────────
+2 Workers → 7.01 RPS, 12.67s p50, 26.45s p95, 100% éxito
+4 Workers → 7.50 RPS, 11.15s p50, 25.01s p95, 100% éxito
+         ↓
+Beneficio: +7% RPS, -12% latencia mediana, -5% P95
 ```
 
-### Factor de degradación
+### Lecturas clave
 
-- Throughput: 5.40 → 1.63 RPS = 3.3x más lento.
-- Concurrencia: 50 → 100 VUs = 2x más usuarios.
-- Conclusión: la escalabilidad no es lineal.
+1. **Más workers ayudan:** los 4 workers muestran mejora en latencia bajo carga alta (100 VUs).
+2. **Escalabilidad limitada:** la BD SQLite y la natura del endpoint son el cuello de botella principal.
+3. **Confiabilidad 100%:** en todos los escenarios, cero fallos y cero errores HTTP.
+4. **Throughput máximo:** ~7.5 RPS es la capacidad práctica con SQLite local.
 
 ---
 
 ## 🎯 CUELLOS DE BOTELLA IDENTIFICADOS
 
-1. **Endpoint `/api/v1/estudiantes/` lento**
-   - La consulta tarda varios segundos incluso con 50 VUs.
-   - Posibles causas: N+1 queries, falta de índices, paginación ineficiente o serialización costosa.
+1. **Consulta pesada en `/api/v1/estudiantes/`**
+   - Incluso con mejor concurrencia, la latencia sigue superando los 11s en mediana.
 
-2. **Sin caché**
-   - Cada VU ejecuta el mismo query contra la base de datos.
+2. **Base de datos SQLite en desarrollo**
+   - Sirve para desarrollo, pero no refleja una base optimizada para carga concurrente.
+   - SQLite con múltiples conexiones simultáneas sufre contención.
 
-3. **Capacidad limitada del servidor**
-   - Waitress en este entorno soporta la carga, pero con degradación visible.
+3. **Coste de autenticación por iteración**
+   - El flujo completo incluye login en cada vuelta, lo que añade presión innecesaria al backend.
 
-4. **SQLite en desarrollo**
-   - Adecuado para dev, pero no para escenarios de alta concurrencia.
+4. **Posibles consultas no indexadas o serialización costosa**
+   - Hay evidencia previa de consultas con ordenaciones y joins que pueden beneficiarse de índices.
 
 ---
 
@@ -141,53 +241,38 @@ Degradación: -70% en throughput, +2.97% en tasa de error
 
 ### Críticas
 
-1. Optimizar el queryset de `/api/v1/estudiantes/`.
-2. Agregar índices a la base de datos.
-3. Implementar paginación eficiente.
+1. ✅ **Mantener Uvicorn/Gunicorn con 4 workers async** en despliegue local y producción.
+2. 📊 **Migrar pruebas a PostgreSQL** para obtener resultados representativos de producción.
+3. 🔄 **Separar autenticación** de la ruta de consulta en el script k6.
 
 ### Altas
 
-4. Incorporar caché con Redis.
-5. Migrar a PostgreSQL en entornos de prueba/producción.
-6. Evaluar Gunicorn en producción.
+4. 📇 **Añadir índices** sobre columnas de ordenación (`full_name`, `carnet`) y filtros.
+5. 🚀 **Revisar el queryset y serialización** del listado de estudiantes; considerar pagination más agresiva.
+6. 💾 **Usar cache distribuido** en producción si el acceso es repetitivo.
 
 ### Medianas
 
-7. Monitoreo con InfluxDB y Grafana.
-8. Escalado horizontal detrás de Nginx.
+7. 🔧 **Escalar workers según CPU** disponible en el ambiente objetivo.
+8. 📈 **Medir nuevamente con BD de staging/producción**.
+9. 📝 **Documentar configuración de despliegue** Uvicorn/Gunicorn en README y docs.
 
 ---
 
 ## 📋 MATRIZ DE CAPACIDAD
 
-| Objetivo de carga | Mínimo | Actual | Recomendado |
-|---|---:|---:|---:|
-| P50 latencia | < 200 ms | 8.16 s | < 300 ms |
-| P95 latencia | < 500 ms | 14.09 s | < 1 s |
-| RPS | > 20 | 5.40 | > 50 |
-| Disponibilidad | > 99% | 100% | > 99.9% |
-
----
-
-## 🎬 Próximos pasos
-
-1. Revisar el queryset del endpoint `/api/v1/estudiantes/`.
-2. Añadir índices a la base de datos.
-3. Implementar caché si el acceso es repetitivo.
-4. Migrar a PostgreSQL cuando sea posible.
-
----
-
-## 📚 Archivos generados
-
-- `resultados_estudiantes_fullflow.json` — datos brutos Prueba 1
-- `resultados_estudiantes_queryonly.json` — datos brutos Prueba 2
-- `analizar_resultados.py` — script de análisis
+| Objetivo de carga | 50 VUs (2W) | 50 VUs (4W) | 100 VUs (2W) | 100 VUs (4W) | Referencia deseada |
+|---|---:|---:|---:|---:|---:|
+| P50 latencia | 6.07 s | 4.55 s | 12.67 s | 11.15 s | < 300 ms |
+| P95 latencia | 13.67 s | 13.29 s | 26.45 s | 25.01 s | < 1 s |
+| RPS | 6.54 | 6.20 | 7.01 | 7.50 | > 20 |
+| Disponibilidad | 100% | 100% | 100% | 100% | > 99.9% |
+| Duración prueba | ~30.6s | ~32.2s | ~28.5s | ~26.7s | — |
 
 ---
 
 ## 🔗 Referencias
 
 - https://k6.io/docs/
+- https://docs.djangoproject.com/en/stable/howto/deployment/asgi/
 - https://docs.djangoproject.com/en/stable/topics/db/optimization/
-- https://gunicorn.org/

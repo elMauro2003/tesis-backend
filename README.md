@@ -399,6 +399,149 @@ python manage.py flush
 
 ---
 
+## 🚀 Despliegue
+
+El sistema está configurado para despliegue local (desarrollo) y producción con ASGI + Gunicorn/Uvicorn.
+
+### Despliegue Local (Desarrollo)
+
+#### Prerequisitos
+
+- Python 3.12+
+- UV 0.8+ (gestor de paquetes)
+- PostgreSQL 15+ (recomendado; SQLite para desarrollo básico)
+
+#### Instalación y ejecución
+
+```bash
+# 1. Clonar repositorio
+git clone https://github.com/yourusername/uclv_residencias.git
+cd uclv_residencias
+
+# 2. Instalar dependencias
+uv sync
+
+# 3. Crear variables de entorno
+cp .env.example .env  # Ajustar valores según ambiente
+
+# 4. Migraciones y seed
+python manage.py migrate
+python manage.py seed_database  # Opcional: carga datos de prueba
+
+# 5. Ejecutar servidor local (Uvicorn con 4 workers)
+uv run uvicorn config.asgi:application \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 4 \
+    --reload  # Solo desarrollo
+
+# 6. Acceder
+# API: http://localhost:8000/api/v1/
+# Docs: http://localhost:8000/api/v1/docs/
+```
+
+**Nota:** El flag `--workers 4` distribuye la carga entre 4 procesos async, mejorando concurrencia. Ver [benchmarks](#pruebas-de-carga) para detalles.
+
+### Despliegue con Docker (Local/Producción)
+
+```bash
+# Build y lanzar con Docker Compose
+docker-compose up -d
+
+# Verificar estado
+docker-compose logs -f backend
+
+# Detener
+docker-compose down
+```
+
+Dockerfile y docker-compose.yml están configurados para Gunicorn + UvicornWorker.
+
+### Despliegue en Producción
+
+#### Opción 1: Gunicorn + UvicornWorker (Recomendado)
+
+```bash
+# Configurar variables de entorno
+export DEBUG=False
+export ALLOWED_HOSTS="tudominio.com"
+export SECRET_KEY="tu-clave-secreta-aqui"
+
+# Ejecutar con Gunicorn
+gunicorn config.asgi:application \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --workers 8 \
+    --bind 0.0.0.0:8000 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info
+```
+
+**workers:** Ajustar según número de CPUs: `(2 × CPU_count) + 1`
+
+#### Opción 2: Uvicorn directo (Simple)
+
+```bash
+uv run uvicorn config.asgi:application \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --workers 8
+```
+
+#### Configuración Nginx (Reverse proxy recomendado)
+
+```nginx
+upstream backend {
+    server 127.0.0.1:8000;
+}
+
+server {
+    listen 80;
+    server_name tudominio.com;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+### Monitoreo y logs
+
+```bash
+# Logs en tiempo real
+docker-compose logs -f backend
+
+# Metrics (si está configurado Prometheus)
+curl http://localhost:8000/metrics
+
+# Health check
+curl http://localhost:8000/api/v1/health/
+```
+
+### Documentación completa
+
+Ver [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) para guía detallada de despliegue, configuración de BD, SSL, etc.
+
+---
+
+## 📊 Pruebas de Carga
+
+El endpoint `/api/v1/estudiantes/` fue optimizado y probado con k6. Resultados recientes:
+
+| Workers | Carga | Latencia P50 | Latencia P95 | RPS | Éxito |
+|---------|-------|---:|---:|---:|---|
+| 2 | 50 VUs | 6.07 s | 13.67 s | 6.54 | ✅ 100% |
+| 2 | 100 VUs | 12.67 s | 26.45 s | 7.01 | ✅ 100% |
+| **4 (recomendado)** | **50 VUs** | **4.55 s** | **13.29 s** | **6.20** | ✅ **100%** |
+| **4 (recomendado)** | **100 VUs** | **11.15 s** | **25.01 s** | **7.50** | ✅ **100%** |
+
+**Conclusión:** 4 workers mejoran la latencia mediana en un ~25% bajo carga moderada y ~12% bajo carga máxima, sin comprometer confiabilidad.
+
+Ver [performance/k6/REPORTE_RENDIMIENTO.md](performance/k6/REPORTE_RENDIMIENTO.md) para análisis completo.
+
 ## 🤝 Contribuyendo
 
 ### Principios de desarrollo
