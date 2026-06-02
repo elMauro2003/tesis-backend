@@ -1,5 +1,6 @@
 from django.db.models import Prefetch
 from django.db.models import Exists, OuterRef
+from django.contrib.auth.models import Group as DjangoGroup
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -17,7 +18,7 @@ from .serializers import (
     StudentSerializer, StudentListSerializer, StudentCreateSerializer,
     ProfessorSerializer, ProfessorCreateSerializer,
     DeanSerializer, GroupAdvisorSerializer,
-    YearLeadProfessorSerializer, WingSupervisorSerializer,
+    YearLeadProfessorSerializer, WingSupervisorSerializer, GroupAssignmentSerializer,
 )
 from apps.operations.models import Assignment
 
@@ -230,4 +231,41 @@ class ProfessorViewSet(viewsets.ModelViewSet):
             return Response(WingSupervisorSerializer(ws).data, status=status.HTTP_201_CREATED)
         if request.method == "DELETE":
             WingSupervisor.objects.filter(professor=professor).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(tags=["professors"], summary="Asignar/consultar/limpiar grupos (roles) de usuario",
+                   request=GroupAssignmentSerializer, responses={200: GroupAssignmentSerializer})
+    @action(detail=True, methods=["get", "post", "delete"], url_path="grupos")
+    def assign_groups(self, request, pk=None):
+        """
+        Asigna grupos (roles) a un usuario profesor.
+        
+        GET: lista los grupos actuales del usuario
+        POST: asigna nuevos grupos (reemplaza los anteriores)
+        DELETE: elimina todos los grupos del usuario
+        """
+        professor = self.get_object()
+        user = professor.user
+        
+        if request.method == "GET":
+            groups = user.groups.values_list("name", flat=True)
+            return Response({"groups": list(groups)})
+        
+        if request.method == "POST":
+            serializer = GroupAssignmentSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            # Obtener los grupos validados
+            group_names = serializer.validated_data["groups"]
+            groups = DjangoGroup.objects.filter(name__in=group_names)
+            
+            # Limpiar grupos anteriores y asignar nuevos
+            user.groups.clear()
+            user.groups.set(groups)
+            
+            return Response({"groups": list(groups.values_list("name", flat=True))}, 
+                          status=status.HTTP_200_OK)
+        
+        if request.method == "DELETE":
+            user.groups.clear()
             return Response(status=status.HTTP_204_NO_CONTENT)

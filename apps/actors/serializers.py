@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group as DjangoGroup
 from rest_framework import serializers
 
 from apps.academic.models import CareerYear
@@ -291,3 +292,24 @@ class WingSupervisorSerializer(serializers.ModelSerializer):
     class Meta:
         model  = WingSupervisor
         fields = ["professor", "professor_name", "wing", "wing_name"]
+
+
+# ─── Role Groups Assignment ────────────────────────────────────────────────────
+
+class GroupAssignmentSerializer(serializers.Serializer):
+    """Asigna grupos (roles) a un usuario profesor."""
+    groups = serializers.ListField(
+        child=serializers.CharField(max_length=150),
+        help_text="Lista de nombres de grupos/roles a asignar (ej: ['directivo', 'instructor'])"
+    )
+
+    def validate_groups(self, value):
+        """Valida que todos los grupos existan."""
+        valid_groups = DjangoGroup.objects.filter(name__in=value).values_list("name", flat=True)
+        invalid = set(value) - set(valid_groups)
+        if invalid:
+            raise serializers.ValidationError(
+                f"Grupos no válidos: {', '.join(invalid)}. Grupos disponibles: "
+                f"{', '.join(DjangoGroup.objects.values_list('name', flat=True))}"
+            )
+        return value
