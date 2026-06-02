@@ -190,6 +190,9 @@ Authorization: Bearer <token>
 | DELETE | `/api/v1/profesores/{id}/profesor-guia/` | Remover PG | Admin |
 | POST | `/api/v1/profesores/{id}/ppa/` | Asignar PPA | Admin |
 | DELETE | `/api/v1/profesores/{id}/ppa/` | Remover PPA | Admin |
+| GET | `/api/v1/profesores/{id}/grupos/` | Listar grupos del profesor | Directivo, Admin |
+| POST | `/api/v1/profesores/{id}/grupos/` | Asignar/Actualizar grupos del profesor (reemplaza) | Directivo, Admin |
+| DELETE | `/api/v1/profesores/{id}/grupos/` | Eliminar todos los grupos del profesor | Directivo, Admin |
 
 ---
 

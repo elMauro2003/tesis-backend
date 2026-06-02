@@ -160,6 +160,16 @@ POST /api/v1/profesores/3/ppa/
   "career_year": 1  # Asigna como PPA del 3er año de ICI
 }
 → 201 Created
+
+POST /api/v1/profesores/4/grupos/
+{
+  "groups": ["directivo", "instructor"]
+}
+→ 200 OK
+Response:
+{
+  "groups": ["directivo", "instructor"]
+}
 ```
 
 ### Fase 2: Ingreso de Estudiantes (Septiembre)
@@ -1039,6 +1049,10 @@ DELETE /api/v1/profesores/{id}/profesor-guia/
 GET    /api/v1/profesores/{id}/ppa/
 POST   /api/v1/profesores/{id}/ppa/
 DELETE /api/v1/profesores/{id}/ppa/
+\
+GET    /api/v1/profesores/{id}/grupos/
+POST   /api/v1/profesores/{id}/grupos/
+DELETE /api/v1/profesores/{id}/grupos/
 ```
 
 ### Operaciones Continuas
